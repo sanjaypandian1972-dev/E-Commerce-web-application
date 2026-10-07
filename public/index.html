@@ -1,1 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shopfront</title>
+<style>
+:root{--bg:#F3F1ED;--surface:#fff;--ink:#201A14;--muted:#78705F;--line:#E4DED3;--accent:#B5502A;--accent-ink:#fff;--ok:#1F9D63;--warn:#D98A0B;--bad:#C0392B}
+@media (prefers-color-scheme:dark){:root{--bg:#171310;--surface:#231D18;--ink:#F3ECE2;--muted:#A89A86;--line:#352C23;--accent:#E07A4E;--accent-ink:#171310}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+[hidden]{display:none!important}
+a{color:inherit}
+.wrap{max-width:1150px;margin:0 auto;padding:18px 16px 60px}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:18px}
+.brand{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;margin-right:auto}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:none;border:1px solid transparent}
+nav button.active{border-color:var(--line);background:var(--surface)}
+input,select,textarea,button{font:inherit;color:inherit}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 12px;width:100%}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button:hover{border-color:var(--accent)}
+.cartbtn{position:relative}
+.badge{position:absolute;top:-7px;right:-7px;background:var(--accent);color:var(--accent-ink);border-radius:99px;font-size:.72rem;min-width:18px;height:18px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.toolbar input{flex:1;min-width:160px}
+.toolbar select{width:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.pcard img{width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--line)}
+.pcard .body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.pcard h3{margin:0;font-size:1rem}
+.pcard .cat{color:var(--muted);font-size:.8rem}
+.pcard .price{font-weight:700;font-size:1.05rem;margin-top:auto}
+.pcard .stock{font-size:.8rem;color:var(--muted)}
+.pcard .stock.low{color:var(--bad)}
+.empty{color:var(--muted);padding:30px 4px;text-align:center}
+/* cart drawer */
+#cart{position:fixed;inset:0 0 0 auto;width:min(380px,100%);background:var(--surface);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .25s;z-index:30;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0)}
+#cart.open{transform:translateX(0)}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s;z-index:29}
+#scrim.open{opacity:1;pointer-events:auto}
+.cart-head{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
+.cart-items{flex:1;overflow:auto;padding:10px 16px}
+.citem{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.citem img{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--line)}
+.citem .ci-body{flex:1;min-width:0}
+.citem h4{margin:0 0 2px;font-size:.92rem;overflow-wrap:anywhere}
+.qtyrow{display:flex;align-items:center;gap:8px;margin-top:4px}
+.qtyrow button{padding:2px 9px}
+.cart-foot{padding:16px;border-top:1px solid var(--line)}
+.total-row{display:flex;justify-content:space-between;font-weight:700;margin-bottom:10px}
+/* orders */
+.order{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.order .top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.status{font-size:.78rem;padding:3px 10px;border-radius:99px;background:var(--line);text-transform:capitalize}
+.status.paid,.status.delivered{background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok)}
+.status.shipped{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+.status.cancelled{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
+.order ul{margin:0;padding-left:18px;color:var(--muted);font-size:.9rem}
+/* admin */
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:.9rem}
+th{color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:none}
+.tscroll{overflow-x:auto}
+.row2{display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-block;font-size:.75rem;color:var(--muted)}
+/* auth */
+#auth{min-height:100vh;display:grid;place-items:center;padding:20px}
+#af{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px;width:min(400px,100%)}
+#af button{width:100%;margin-top:8px}
+.err{color:var(--bad);min-height:1.3em;margin:0 0 4px;font-size:.9rem}
+/* dialog */
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);width:min(460px,92vw);padding:22px}
+dialog::backdrop{background:rgba(10,14,24,.5)}
+label{display:block;font-size:.88rem;color:var(--muted);margin-bottom:12px}
+label>*{margin-top:4px;color:var(--ink)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+section.view{display:none}
+section.view.active{display:block}
+</style>
+</head>
+<body>
 
+<main id="auth" hidden>
+  <form id="af">
+    <h1 style="margin:0 0 4px">Shopfront</h1>
+    <p id="am" style="color:var(--muted);margin:0 0 16px">Sign in to shop.</p>
+    <label id="nl" hidden>Name<input id="an" maxlength="100" autocomplete="name"></label>
+    <label>Email<input id="ae" type="email" required autocomplete="email"></label>
+    <label>Password<input id="ap" type="password" required minlength="6" autocomplete="current-password"></label>
+    <p class="err" id="aerr" role="alert"></p>
+    <button class="primary" id="asub">Sign in</button>
+    <button type="button" id="atog">Create an account</button>
+  </form>
+</main>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <div class="brand">Shopfront</div>
+    <nav>
+      <button data-view="shop" class="active">Shop</button>
+      <button data-view="orders">My Orders</button>
+      <button data-view="admin" id="adminTab" hidden>Admin</button>
+    </nav>
+    <span class="pill" id="uname"></span>
+    <button class="cartbtn" id="cartBtn">Cart<span class="badge" id="cartCount" hidden>0</span></button>
+    <button id="out">Log out</button>
+  </header>
+
+  <section class="view active" id="view-shop">
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="Search products">
+      <select id="fcat"><option value="">All categories</option></select>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="view" id="view-orders">
+    <h2 style="margin-top:0">My Orders</h2>
+    <div id="myOrders"><p class="empty">No orders yet.</p></div>
+  </section>
+
+  <section class="view" id="view-admin">
+    <div class="row2" style="justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h2 style="margin:0">Admin</h2>
+      <button class="primary" id="newProductBtn">New product</button>
+    </div>
+    <h3>Products</h3>
+    <div class="tscroll"><table id="adminProducts"><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr></thead><tbody></tbody></table></div>
+    <h3 style="margin-top:28px">Orders</h3>
+    <div class="tscroll"><table id="adminOrders"><thead><tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>Items</th><th></th></tr></thead><tbody></tbody></table></div>
+  </section>
+</div>
+
+<div id="scrim"></div>
+<aside id="cart">
+  <div class="cart-head"><strong>Your Cart</strong><button id="closeCart">Close</button></div>
+  <div class="cart-items" id="cartItems"><p class="empty">Your cart is empty.</p></div>
+  <div class="cart-foot">
+    <div class="total-row"><span>Total</span><span id="cartTotal">$0.00</span></div>
+    <button class="primary" id="checkoutBtn" style="width:100%">Checkout</button>
+  </div>
+</aside>
+
+<dialog id="pdlg">
+  <form method="dialog" id="pf">
+    <h2 id="pdt">New product</h2>
+    <label>Name<input id="p_name" required maxlength="150"></label>
+    <label>Description<textarea id="p_desc" rows="3"></textarea></label>
+    <div class="two">
+      <label>Price (USD)<input id="p_price" type="number" step="0.01" min="0" required></label>
+      <label>Stock<input id="p_stock" type="number" step="1" min="0" required></label>
+    </div>
+    <div class="two">
+      <label>Category<input id="p_cat" maxlength="80"></label>
+      <label>Image URL<input id="p_img" maxlength="500"></label>
+    </div>
+    <div class="foot"><button type="button" id="pcancel">Cancel</button><button class="primary" type="submit">Save product</button></div>
+  </form>
+</dialog>
+
+<script>
+const $=id=>document.getElementById(id);
+let token=localStorage.getItem("ec_token"),user=JSON.parse(localStorage.getItem("ec_user")||"null");
+let products=[],cart=JSON.parse(localStorage.getItem("ec_cart")||"[]"),editingProduct=null,registering=false;
+
+async function api(p,m="GET",b){
+  const r=await fetch("/api"+p,{method:m,headers:{"Content-Type":"application/json",...(token&&{Authorization:"Bearer "+token})},body:b&&JSON.stringify(b)});
+  if(r.status===401&&token){logout();throw Error("Session expired. Please sign in again.")}
+  const d=r.status===204?null:await r.json().catch(()=>null);
+  if(!r.ok)throw Error((d&&d.error)||"Request failed");
+  return d;
+}
+const money=n=>"$"+Number(n).toFixed(2);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- auth ---------- */
+function setAuthMode(reg){
+  registering=reg;$("nl").hidden=!reg;$("an").required=reg;
+  $("asub").textContent=reg?"Create account":"Sign in";
+  $("atog").textContent=reg?"I already have an account":"Create an account";
+  $("am").textContent=reg?"Create an account to start shopping.":"Sign in to shop.";
+  $("aerr").textContent="";
+}
+$("atog").onclick=()=>setAuthMode(!registering);
+$("af").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    const d=await api(registering?"/register":"/login","POST",{name:$("an").value,email:$("ae").value,password:$("ap").value});
+    token=d.token;user=d.user;
+    localStorage.setItem("ec_token",token);localStorage.setItem("ec_user",JSON.stringify(user));
+    $("af").reset();start();
+  }catch(err){$("aerr").textContent=err.message}
+};
+function logout(){
+  token=null;user=null;localStorage.removeItem("ec_token");localStorage.removeItem("ec_user");
+  $("app").hidden=true;$("auth").hidden=false;setAuthMode(false);
+}
+$("out").onclick=logout;
+
+/* ---------- nav ---------- */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+function showView(v){
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.view===v));
+  document.querySelectorAll(".view").forEach(s=>s.classList.toggle("active",s.id==="view-"+v));
+  if(v==="orders")loadMyOrders();
+  if(v==="admin")loadAdmin();
+}
+
+/* ---------- shop ---------- */
+async function loadProducts(){
+  try{
+    products=await api("/products"+(($("q").value||$("fcat").value)?("?"+new URLSearchParams({q:$("q").value,category:$("fcat").value})):""));
+    const cats=[...new Set(products.map(p=>p.category).filter(Boolean))];
+    $("fcat").innerHTML=`<option value="">All categories</option>`+cats.map(c=>`<option ${c===$("fcat").value?"selected":""}>${esc(c)}</option>`).join("");
+    renderGrid();
+  }catch(e){$("grid").innerHTML=`<p class="empty">${esc(e.message)}</p>`}
+}
+function renderGrid(){
+  if(!products.length){$("grid").innerHTML=`<p class="empty">No products found.</p>`;return}
+  $("grid").innerHTML=products.map(p=>`
+    <div class="pcard">
+      <img src="${esc(p.image_url||'')}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="body">
+        <span class="cat">${esc(p.category||'')}</span>
+        <h3>${esc(p.name)}</h3>
+        <span class="stock ${p.stock<1?'low':''}">${p.stock<1?'Out of stock':p.stock+' in stock'}</span>
+        <span class="price">${money(p.price)}</span>
+        <button class="primary" data-add="${p.id}" ${p.stock<1?'disabled':''}>Add to cart</button>
+      </div>
+    </div>`).join("");
+}
+$("grid").onclick=e=>{const b=e.target.closest("[data-add]");if(b)addToCart(+b.dataset.add)};
+let qTimer;
+$("q").oninput=()=>{clearTimeout(qTimer);qTimer=setTimeout(loadProducts,300)};
+$("fcat").onchange=loadProducts;
+
+/* ---------- cart ---------- */
+function saveCart(){localStorage.setItem("ec_cart",JSON.stringify(cart))}
+function addToCart(id){
+  const line=cart.find(l=>l.product_id===id);
+  const p=products.find(p=>p.id===id);
+  const have=line?line.quantity:0;
+  if(p&&have>=p.stock)return alert("No more stock available for this item.");
+  if(line)line.quantity++;else cart.push({product_id:id,quantity:1});
+  saveCart();renderCart();openCart();
+}
+function changeQty(id,d){
+  const line=cart.find(l=>l.product_id===id);if(!line)return;
+  line.quantity+=d;
+  if(line.quantity<=0)cart=cart.filter(l=>l.product_id!==id);
+  saveCart();renderCart();
+}
+function renderCart(){
+  const count=cart.reduce((s,l)=>s+l.quantity,0);
+  $("cartCount").hidden=!count;$("cartCount").textContent=count;
+  if(!cart.length){$("cartItems").innerHTML=`<p class="empty">Your cart is empty.</p>`;$("cartTotal").textContent=money(0);return}
+  let total=0;
+  $("cartItems").innerHTML=cart.map(l=>{
+    const p=products.find(p=>p.id===l.product_id);
+    if(!p)return"";
+    total+=p.price*l.quantity;
+    return `<div class="citem"><img src="${esc(p.image_url||'')}" onerror="this.style.visibility='hidden'">
+      <div class="ci-body"><h4>${esc(p.name)}</h4><span class="pill">${money(p.price)} each</span>
+      <div class="qtyrow"><button data-q="-1" data-id="${p.id}">−</button><span>${l.quantity}</span><button data-q="1" data-id="${p.id}">+</button></div></div></div>`;
+  }).join("");
+  $("cartTotal").textContent=money(total);
+}
+$("cartItems").onclick=e=>{const b=e.target.closest("[data-q]");if(b)changeQty(+b.dataset.id,+b.dataset.q)};
+function openCart(){$("cart").classList.add("open");$("scrim").classList.add("open")}
+function closeCart(){$("cart").classList.remove("open");$("scrim").classList.remove("open")}
+$("cartBtn").onclick=openCart;$("closeCart").onclick=closeCart;$("scrim").onclick=closeCart;
+$("checkoutBtn").onclick=async()=>{
+  if(!cart.length)return;
+  try{
+    await api("/orders","POST",{items:cart});
+    cart=[];saveCart();renderCart();closeCart();
+    alert("Order placed! Check My Orders for status.");
+    loadProducts();showView("orders");
+  }catch(e){alert(e.message)}
+};
+
+/* ---------- my orders ---------- */
+async function loadMyOrders(){
+  try{
+    const orders=await api("/orders/mine");
+    $("myOrders").innerHTML=orders.length?orders.map(renderOrder).join(""):`<p class="empty">No orders yet.</p>`;
+  }catch(e){$("myOrders").innerHTML=`<p class="empty">${esc(e.message)}</p>`}
+}
+function renderOrder(o){
+  return `<div class="order"><div class="top"><strong>Order #${o.id}</strong><span class="status ${o.status}">${o.status}</span></div>
+  <ul>${o.items.map(i=>`<li>${i.quantity} × ${esc(i.product_name)} — ${money(i.price*i.quantity)}</li>`).join("")}</ul>
+  <div class="top" style="margin-top:8px;margin-bottom:0"><span class="pill">${new Date(o.created_at).toLocaleString()}</span><strong>${money(o.total)}</strong></div></div>`;
+}
+
+/* ---------- admin ---------- */
+async function loadAdmin(){
+  try{
+    const [prods,orders]=await Promise.all([api("/products"),api("/orders")]);
+    $("adminProducts").querySelector("tbody").innerHTML=prods.map(p=>`
+      <tr><td>${esc(p.name)}</td><td>${esc(p.category||'')}</td><td>${money(p.price)}</td><td>${p.stock}</td>
+      <td class="row2"><button data-edit="${p.id}">Edit</button><button data-del="${p.id}">Delete</button></td></tr>`).join("")||`<tr><td colspan="5">No products.</td></tr>`;
+    window._adminProducts=prods;
+    $("adminOrders").querySelector("tbody").innerHTML=orders.map(o=>`
+      <tr><td>#${o.id}</td><td>${esc(o.customer_name)}<br><span class="pill">${esc(o.customer_email)}</span></td><td>${money(o.total)}</td>
+      <td><select data-status="${o.id}"><option ${o.status==='pending'?'selected':''}>pending</option><option ${o.status==='paid'?'selected':''}>paid</option><option ${o.status==='shipped'?'selected':''}>shipped</option><option ${o.status==='delivered'?'selected':''}>delivered</option><option ${o.status==='cancelled'?'selected':''}>cancelled</option></select></td>
+      <td><ul style="margin:0;padding-left:16px">${o.items.map(i=>`<li>${i.quantity}× ${esc(i.product_name)}</li>`).join("")}</ul></td><td></td></tr>`).join("")||`<tr><td colspan="6">No orders yet.</td></tr>`;
+  }catch(e){alert(e.message)}
+}
+$("adminProducts").onclick=async e=>{
+  const ed=e.target.closest("[data-edit]"),del=e.target.closest("[data-del]");
+  if(ed)openProductForm(+ed.dataset.edit);
+  if(del){if(confirm("Delete this product?")){try{await api("/products/"+del.dataset.del,"DELETE");loadAdmin()}catch(err){alert(err.message)}}}
+};
+$("adminOrders").addEventListener("change",async e=>{
+  const sel=e.target.closest("[data-status]");if(!sel)return;
+  try{await api("/orders/"+sel.dataset.status+"/status","PUT",{status:sel.value})}catch(err){alert(err.message)}
+});
+function openProductForm(id){
+  editingProduct=id;
+  const p=(window._adminProducts||[]).find(x=>x.id===id)||{name:"",description:"",price:"",stock:"",category:"",image_url:""};
+  $("pdt").textContent=id?"Edit product":"New product";
+  $("p_name").value=p.name;$("p_desc").value=p.description||"";$("p_price").value=p.price;
+  $("p_stock").value=p.stock;$("p_cat").value=p.category||"";$("p_img").value=p.image_url||"";
+  $("pdlg").showModal();$("p_name").focus();
+}
+$("newProductBtn").onclick=()=>openProductForm(null);
+$("pcancel").onclick=()=>$("pdlg").close();
+$("pf").onsubmit=async()=>{
+  const v={name:$("p_name").value.trim(),description:$("p_desc").value.trim(),price:$("p_price").value,
+           stock:$("p_stock").value,category:$("p_cat").value.trim(),image_url:$("p_img").value.trim()};
+  if(!v.name||v.price==="")return;
+  try{
+    await(editingProduct?api("/products/"+editingProduct,"PUT",v):api("/products","POST",v));
+    loadAdmin();loadProducts();
+  }catch(e){alert(e.message)}
+};
+
+/* ---------- boot ---------- */
+function start(){
+  $("auth").hidden=true;$("app").hidden=false;$("uname").textContent=user.name+" ("+user.role+")";
+  $("adminTab").hidden=user.role!=="admin";
+  renderCart();loadProducts();
+}
+token&&user?start():($("auth").hidden=false);
+</script>
+</body>
+</html>
